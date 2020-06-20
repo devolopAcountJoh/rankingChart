@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ranking chart</title>
+  <style>
+    body {
+      background-color: rgb(129, 165, 190);
+    }
+
+    button {
+      background-color: rgb(29, 49, 29);
+      color: white;
+      font-size: 30px;
+      margin: auto;
+      display: block;
+      border-radius: 1rem;
+    }
+
+    .diagram {
+      position: relative;
+      width: 1000px;
+      height: 800px;
+      margin: auto;
+      background-color: lightgreen;
+      overflow: hidden;
+    }
+
+    .diagram_header {
+      height: 100px;
+      margin-left: 50px;
+    }
+
+    .diagram_body {
+      position: relative;
+      height: 600px;
+      width: 900px;
+      overflow: hidden;
+      margin: auto;
+      background-color: #ccc;
+
+    }
+
+    .diagram_body>div {
+      position: absolute;
+      height: 20px;
+      margin-bottom: 10px;
+      transition: top 1.5s;
+    }
+
+    .diagram_year_number {
+      position: absolute;
+      font-size: 39px;
+      right: 50px;
+    }
+
+    .area {
+      display: inline-block;
+      height: 20px;
+      transition: width 1.5s;
+    }
+
+    .icon {
+      display: inline-block;
+      width: 160px;
+    }
+  </style>
+  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="data.js"></script>
+</head>
+
+<body>
+  <div class="diagram">
+    <canvas width='900px' height='100px' class="diagram_header">your browser not support canvas</canvas>
+    <div class="diagram_body"></div>
+    <div class="diagram_year_number">0</div>
+  </div>
+  <button>start </button>
+
+</body>
+
+<script>
+  //load data() {
+
+  step0 = dataSource.replace(/,| /g, "").split("\n");
+  step1 = step0.map(item => {
+    return item.split("$").map((e, i, arr) => { if (i != 0) { return arr[i] = parseInt(e); } else { return e = e; } });
+  })
+
+  function gennerate_ranking_arrs() {
+    var colum_numbers = step1[0].length;
+    var row_numbers = step1.length;
+    var ranked_arr = [];
+
+
+    // get ordered arr ordered by first colum
+    for (var i = 0; i < row_numbers; i++) {
+      var ranked_num = 0;
+      for (var j = 0; j < row_numbers; j++) {
+
+        if (step1[i][1] < step1[j][1]) { ranked_num++; };
+      }
+      ranked_arr[ranked_num] = step1[i];
+      ranked_arr[ranked_num].push(ranked_num);
+
+    }
+    //add other unodered arr colum index to ranked arr
+    for (var mmm = 2; mmm < colum_numbers; mmm++) {
+      for (var i = 0; i < row_numbers; i++) {
+        var ranked_num = 0;
+        for (var j = 0; j < row_numbers; j++) {
+
+          if (ranked_arr[i][mmm] < ranked_arr[j][mmm]) { ranked_num++; };
+        }
+
+        ranked_arr[i].push(ranked_num);
+
+      }
+    }
+
+
+    return ranked_arr;
+  }
+
+  parsed_clors = raw_clors.match(/#(\w){6}/g);
+  ranked_arr = gennerate_ranking_arrs();
+
+  // work
+  class diagram {
+    constructor(ranked_arr) {
+      this.ranked_arr = ranked_arr;
+      this.generateColors();
+      //    console.log(this.ranked_arr);
+      this.draw_header();
+      this.setState(0)
+
+    }
+
+    generateColors() {
+      this.colorPool = parsed_clors;
+      return this.colorPool;
+    }
+    draw_header() {
+      if ($('.diagram_header')[0].getContext) {
+        var ctx = $('.diagram_header')[0].getContext('2d')
+        ctx.save();
+        // Filled triangle
+        ctx.beginPath();
+
+        var gradient3 = ctx.createLinearGradient(0, 0, 900, 0);
+        gradient3.addColorStop(0, 'yellow');
+        gradient3.addColorStop(1, 'rgba(0, 0, 0, 1)');
+        ctx.fillStyle = gradient3;
+        let region = new Path2D();
+        region.moveTo(0, 50);
+        region.lineTo(800, 50);
+        region.lineTo(800, 30);
+        region.lineTo(900, 50);
+
+        region.lineTo(900, 60);
+        region.lineTo(0, 60);
+
+        region.closePath();
+
+        // Fill path
+
+        ctx.fill(region, 'evenodd');
+        ctx.restore();
+        //   ctx.fillStyle = 'blue';
+
+        ctx.font = '30px serif';
+        ctx.fillText('top nations gdp per capital', 300, 20);
+        ctx.font = '16px serif';
+        ctx.lineWidth = 6;
+        for (var i = 0; i < 14; i++) {
+          var change = i / 1.5;
+          console.log(change)
+          ctx.fillText(Math.round(change * 100 * 150), change * 100, 80);
+          ctx.moveTo(change * 100, 50);
+          ctx.lineTo(change * 100, 65);
+          ctx.stroke();
+          ctx.closePath();
+        }
+      }
+    }
+
+    patch(previous, current) {
+      if (previous == current) {
+        this.year_number_node = $('.diagram_year_number');
+        this.createdDoms = [];
+        var anchor = ((min, max) => {
+          return Math.floor(Math.random() * (max - min + 1) + min);
+        })(1, 50);
+
+        var container = $('.diagram_body');
+        this.ranked_arr.forEach((e, i, arr) => {
+          var newDom = $("<div class=" + e[0] + "></div>").append(
+            '<div class="area"></div>' +
+            "<div class='icon'></div>"
+          );
+          newDom.children().last().text(e[0]);
+          newDom.css({ top: ((i + 1) * 50).toString() + 'px' });
+          newDom.children().first().css({
+            width: 0, background: this.colorPool[anchor++]
+          });
+          this.createdDoms.push(newDom);
+          container.append(newDom);
+        });
+
+      } else {
+
+        this.year_number_node.text(current + 2013);
+        this.ranked_arr.forEach((e, i, arr) => {
+          this.createdDoms[i].children().first().css({ width: e[current] / 150 });
+          this.createdDoms[i].css({ top: ((e[current + 5]) * 50).toString() + 'px' });
+
+        });
+      }
+
+    }
+    setState(new_pointer) {
+      if (new_pointer == 0) {
+        this.patch(new_pointer, new_pointer);
+      } else {
+        this.patch(new_pointer - 1, new_pointer);
+      }
+    }
+  }
+
+  instanceOne = new diagram(ranked_arr);
+  var glabal_animation_state = false;
+
+  $("button").click(
+    () => {
+      if (glabal_animation_state) { return; }
+      var croser = 1;
+      var interval = setInterval(() => {
+
+        instanceOne.setState(croser);
+        croser++;
+        if (croser > 5) {
+          glabal_animation_state = false;
+          clearInterval(interval);
+
+          console.log('stoped')
+        }
+      }, 1600);
+      glabal_animation_state = true;
+    })
+
+
+  window.onload = () => {
+
+
+    (
+      () => {
+        if (glabal_animation_state) { return; }
+
+        var croser = 1;
+        var interval = setInterval(() => {
+
+          instanceOne.setState(croser);
+          croser++;
+          if (croser > 5) {
+            clearInterval(interval);
+            glabal_animation_state = false;
+            console.log('stoped')
+          }
+        }, 1600);
+        glabal_animation_state = true;
+      }
+    )();
+
+  };
+
+
+
+
+
+</script>
+
+</html>
